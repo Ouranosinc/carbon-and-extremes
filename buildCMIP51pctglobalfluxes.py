@@ -13,7 +13,9 @@ import cPickle as pickle
 import numpy.ma as ma # for masks
 
 import Model as Ens
+import Emissions as emi
 import cdf2ens as c2e
+import netcdfutils
 reload(Ens)
 
 
@@ -150,14 +152,46 @@ for model in models:
     mmeglobal.AddModel(mod0)
 
 
-# Old convention
-#outputfname = '/expl6/leduc/CMIP/Gillet-global-tas_pr_ANN.pkl'
+ofile='/home/partanen/data/cumulative_emissions.nc'
 
-# New convention
-output = open('/expl6/leduc/CMIP/CMIP5-global-fluxes-'+scen+'-N'+str(NMOD)+'-'+str(NSEAS)+'seas.pkl', 'wb')
+datain=[]
+varnames=[]
+var_longnames=[]
+var_units=[]
 
-pickle.dump(mmeglobal, output,2)
-output.close()
+timelen=0 #Initial value for the length of time axis
+
+for model in models:
+    if sea=='ANN':
+        gmod=mmeglobal.Mod(model)            
+        
+        # Calculate cumulative emissions
+        C,ALC,AOC=emi.getCO2fluxes(gmod)
+        DC,Lcum,Ocum,E=emi.cfluxes2budget(C,ALC,AOC)
+
+        datain.append(E)
+        varnames.append('cum_co2_emi'+'-'+model)
+        var_longnames.append('Cumulative carbon emissions for '+model)
+        var_units.append('Tt C')    
+
+    time_len_mod=len(gmod.data['1pctCO2']['tas']['r1i1p1']['ANN']['time'].array)
+    if time_len_mod>timelen:
+        timelen=time_len_mod
+
+timein=np.linspace(1,timelen,timelen)
+netcdfutils.write_1d_netcdf_file(datain, timein, ofile, varnames, var_longnames=var_longnames,
+                      var_units=var_units,data_description='Cumulative carbon emissions for the 1pctCO2 scenario from the CMIP5 dataset.')
+
+
+
+## Old convention
+##outputfname = '/expl6/leduc/CMIP/Gillet-global-tas_pr_ANN.pkl'
+#
+## New convention
+#output = open('/expl6/leduc/CMIP/CMIP5-global-fluxes-'+scen+'-N'+str(NMOD)+'-'+str(NSEAS)+'seas.pkl', 'wb')
+#
+#pickle.dump(mmeglobal, output,2)
+#output.close()
 
 
 
