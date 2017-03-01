@@ -9,7 +9,9 @@ from netCDF4 import Dataset
 import Model as Ens
 import gridutils as gu
 
-from tcre5 import *
+# Commented the following line away a because it's bad practice.
+# This probably causes some lost dependencies that need to repaired later.
+# from tcre5 import * 
 
 
 def AggYears(ts,data,t0,t1,dt):
