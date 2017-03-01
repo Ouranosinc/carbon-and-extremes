@@ -6,10 +6,10 @@ import numpy.ma as ma
 from netCDF4 import Dataset
 
 #import classModel.Ensemble as Ens
-import ensemble.Model as Ens
-import ensemble.gridutils as gu
+import Model as Ens
+import gridutils as gu
 
-from cmip5_tcre.tcre5 import *
+from tcre5 import *
 
 
 def AggYears(ts,data,t0,t1,dt):
