@@ -35,11 +35,11 @@ destgrid='CanESM2'
 # models=['BCC-CSM1-1','BNU-ESM','CanESM2','CESM1-BGC','GFDL-ESM2G','GFDL-ESM2M','HadGEM2-ES','INMCM4','IPSL-CM5A-LR','IPSL-CM5A-MR','IPSL-CM5B-LR','MIROC-ESM','MPI-ESM-LR','MPI-ESM-MR','NorESM1-ME'] # 
 
 models=[
-    # 'BNU-ESM',
+     'BNU-ESM',
     # 'CanESM2',
     # 'CESM1-BGC',
     # 'HadGEM2-ES',
-    'inmcm4',
+    #'inmcm4',
     # 'IPSL-CM5A-LR',
     # 'IPSL-CM5A-MR',
     # 'IPSL-CM5B-LR',
@@ -62,13 +62,13 @@ seas=['ANN']
 NSEAS=len(seas)
 
 simdb=c2e.ncdbsearch(datadir,models=models,variables=[vv],scenarios=[scen])
-sys.exit()
+#sys.exit()
 
 # # Create MME object
 
 mme=Ens.MME('Earth System Models from the CMIP5 1pctCO2 experiment.',simdb)
 mme.AggSeasons(seasons=seas)
-mme.Interpolate(destgrid)
+mme.Interpolate(destgrid,seas)
 mme.Resolution()
 
 # Write mme to file
@@ -77,7 +77,7 @@ mme.Resolution()
 #output = open('/home/leduc/data/CMIP/gilletMME-1pctCO2-2_8x2_8.pkl', 'wb')
 
 # New convention
-outputfname = '/expl6/leduc/CMIP/CMIP5-'+'regional'+'-'+vv+'-'+scen+'-N'+str(NMOD)+'-'+str(NSEAS)+'seas.pkl'
+outputfname = '/home/partanen/data/CMIP5-'+'regional'+'-'+vv+'-'+scen+'-N'+str(NMOD)+'-'+str(NSEAS)+'seas.pkl'
 output = open(outputfname, 'wb')
 
 pickle.dump(mme, output,2)
