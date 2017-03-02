@@ -14,6 +14,7 @@ import numpy.ma as ma # for masks
 
 import Model as Ens
 import cdf2ens as c2e
+import netcdfutils
 reload(Ens)
 
 
@@ -56,12 +57,12 @@ scen='1pctCO2'
 seas=['ANN','DJF','JJA','SON','MAM']
 #seas=['ANN']
 NSEAS=len(seas)
-vv='pr'
+var='pr'
 #seas=['ANN']
 
 
 # MODEL SELECTION
-# simdb=c2e.ncdbsearch(datadir,realms=['Amon'],models=[],members=['r1i1p1'],variables=[vv],scenarios=[scen])
+# simdb=c2e.ncdbsearch(datadir,realms=['Amon'],models=[],members=['r1i1p1'],variables=[var],scenarios=[scen])
 # models0=list(set([simdb[i]['mod'] for i in range(len(simdb))]))
 
 # availability=['MIROC4h',            # Models with areacella field available will be selected from previous list
@@ -150,7 +151,7 @@ mmeglobal=Ens.MME('Annual series of global averages for '+str(len(models))+' CMI
 
 for model in models:
     # Pre-process Atmospheric variables:
-    atmvariables=[vv]
+    atmvariables=[var]
     simdb=c2e.ncdbsearch(datadir,realms=['Amon'],models=[model],members=['r1i1p1'],variables=atmvariables,scenarios=[scen])
     simdb=c2e.simdbrejecttslice(simdb)
 
@@ -172,19 +173,19 @@ for model in models:
 
     # Process temperature
     for sea in seas:
-        for mem in atm.Mod(model).Mems(scen,vv):
+        for mem in atm.Mod(model).Mems(scen,var):
 
             # Reload pre-processed atmospheric variables 
-            time=atm.Mod(model).data[scen][vv][mem][sea]['time']
-            temp=atm.Mod(model).data[scen][vv][mem][sea]['series']
+            time=atm.Mod(model).data[scen][var][mem][sea]['time']
+            temp=atm.Mod(model).data[scen][var][mem][sea]['series']
 
             # Calculate global average temperature
             totarea=np.sum(np.sum(aarea,axis=1),axis=0)
             wtemp=np.sum(np.sum(temp*aarea,axis=2),axis=1)/totarea
 
             # Dump diagnosed variables into dummy model
-            mod0.Add2Dic(wtemp,scen=scen,var=vv,mem=mem,sea=sea,typ='global')
-            mod0.Add2Dic(time,scen=scen,var=vv,mem=mem,sea=sea,typ='time')
+            mod0.Add2Dic(wtemp,scen=scen,var=var,mem=mem,sea=sea,typ='global')
+            mod0.Add2Dic(time,scen=scen,var=var,mem=mem,sea=sea,typ='time')
 
     # # Process temperature
     # for sea in seas:
@@ -208,10 +209,55 @@ for model in models:
 
 
 
-output = open('/expl6/leduc/CMIP/CMIP5-'+spatialres+'-'+vv+'-'+scen+'-N'+str(NMOD)+'-'+str(NSEAS)+'seas.pkl', 'wb')
-pickle.dump(mmeglobal, output,2)
-output.close()
-mmeglobal.Show()
+ofile = '/home/partanen/data/CMIP5-'+spatialres+'-'+var+'-'+scen+'-N'+str(NMOD)+'-'+str(NSEAS)+'.nc'
+
+datain=[]
+varnames=[]
+var_longnames=[]
+var_units=[]
+
+timelen=0 #Initial value for the length of time axis
+
+gmod={}
+
+varlongnames={}
+varlongnames['tas']='temperature'
+varlongnames['pr']=precipitation'
+units={}
+units['tas']='K'
+units['pr']='mm day-1'
+
+for model in models, seas:
+
+    
+    gmod=mmeglobal.Mod(model)
+
+ 
+    vardata=gmod.data['1pctCO2'][var]['r1i1p1'][sea]['global']
+    
+    # Convert precipitation from kg m-2 s-1 to mm day-1    
+    if var=='pr':
+        vardata=86400*vardata
+
+    datain.append(vardata)
+    varnames.append(var+'-'+model+'-'+sea)
+    var_longnames.append('Global mean '+varlongnames[var]+ ' in ' +sea+' for '+model)
+    var_units.append(units[var])
+
+    
+
+    time_len_mod=len(gmod[var].data['1pctCO2'][var]['r1i1p1']['ANN']['time'].array)
+    if time_len_mod>timelen:
+        timelen=time_len_mod
+
+timein=np.linspace(1,timelen,timelen)
+netcdfutils.write_1d_netcdf_file(datain, timein, ofile, varnames, var_longnames=var_longnames,
+                      var_units=var_units,data_description='Global mean '+varlongnames[var]+' data for the 1pctCO2 scenario from the CMIP5 dataset.')
+
+
+#pickle.dump(mmeglobal, output,2)
+#output.close()
+#mmeglobal.Show()
 
 
 
