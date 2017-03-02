@@ -11,7 +11,7 @@ import numpy as np
 import os
 import cPickle as pickle
 import numpy.ma as ma # for masks
-
+from itertools import product
 import Model as Ens
 import cdf2ens as c2e
 import netcdfutils
@@ -222,12 +222,12 @@ gmod={}
 
 varlongnames={}
 varlongnames['tas']='temperature'
-varlongnames['pr']=precipitation'
+varlongnames['pr']='precipitation'
 units={}
 units['tas']='K'
 units['pr']='mm day-1'
 
-for model in models, seas:
+for model,sea in product(models,seas):
 
     
     gmod=mmeglobal.Mod(model)
@@ -246,7 +246,7 @@ for model in models, seas:
 
     
 
-    time_len_mod=len(gmod[var].data['1pctCO2'][var]['r1i1p1']['ANN']['time'].array)
+    time_len_mod=len(gmod.data['1pctCO2'][var]['r1i1p1']['ANN']['time'].array)
     if time_len_mod>timelen:
         timelen=time_len_mod
 
