@@ -54,8 +54,8 @@ def destgridmodel(modname):
     print '/\/\/\/\==> Interpolating to the '+modname+' grid.'
     
     #nc=Dataset('/home/leduc/data/CMIP5_1pctCO2/areacella_fx_CanESM2_1pctCO2_r0i0p0.nc')
-#    nc=Dataset('/dmf2/scenario/external_data/CMIP5/CCCMA/CanESM2/1pctCO2/fx/atmos/r0i0p0/areacella/areacella_fx_CanESM2_1pctCO2_r0i0p0.nc')
-    nc=Dataset('/Users/anttii/GoogleDrive/data/tcre2/areacella_fx_CanESM2_1pctCO2_r0i0p0.nc')    
+    nc=Dataset('/dmf2/scenario/external_data/CMIP5/CCCMA/CanESM2/1pctCO2/fx/atmos/r0i0p0/areacella/areacella_fx_CanESM2_1pctCO2_r0i0p0.nc')
+    #nc=Dataset('/Users/anttii/GoogleDrive/data/tcre2/areacella_fx_CanESM2_1pctCO2_r0i0p0.nc')    
     lon_dest=nc.variables['lon'][:]
     lat_dest=nc.variables['lat'][:]
 
