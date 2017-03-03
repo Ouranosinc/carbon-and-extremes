@@ -1,3 +1,6 @@
+"""
+A script to convert Pickle files containin CMIP5 data into netCDF files.
+"""
 
 import cPickle as pickle
 import numpy as np
@@ -18,12 +21,15 @@ mem='r1i1p1'
 vars=['tas', 'pr']
 seas=['JJA','SON','MAM', 'DJF', 'ANN']
 
-
+#Input files
 pklglob_tas=datadir+'CMIP5-global-tas-1pctCO2-N12-5seas.pkl'
 pklglob_pr=datadir+'CMIP5-global-pr-1pctCO2-N12-5seas.pkl'                 
 pklglob_fluxes=datadir+'CMIP5-global-fluxes-1pctCO2-N12-1seas.pkl'       
-         
+pklspat=datadir+'CMIP5-regional-tas-1pctCO2-N12-5seas.pkl'
 
+   
+      
+#Global mean data
 mmeg={}
 
 output = open(pklglob_tas, 'rb')
@@ -41,13 +47,18 @@ output.close()
 
 models=mmeg['tas'].Models()
 
+#Regional data
+output = open(pklspat, 'rb')
+mme=pickle.load(output)
+output.close()  
 
 
 
 
+ofile_gm='/Users/anttii/GoogleDrive/data/tcre-nonCO2/netcdf-test.nc'
+ofile_reg='/Users/anttii/GoogleDrive/data/tcre-nonCO2/netcdf-regional-test.nc'
 
-
-ofile='/Users/anttii/GoogleDrive/data/tcre-nonCO2/netcdf-test.nc'
+############ Global mean data #################################################
 
 datain=[]
 varnames=[]
@@ -91,7 +102,52 @@ for model,sea in product(models, seas):
         timelen=time_len_mod
 
 timein=np.linspace(1,timelen,timelen)
-netcdfutils.write_1d_netcdf_file(datain, timein, ofile, varnames, var_longnames=var_longnames,
+netcdfutils.write_1d_netcdf_file(datain, timein, ofile_gm, varnames, var_longnames=var_longnames,
                       var_units=var_units,data_description='Global mean temperature and precipiation data with cumulative carbon emissions for the 1pctCO2 scenario from the CMIP5 dataset.')
+
+
+############ Regional data ####################################################
+datain=[]
+varnames=[]
+var_longnames=[]
+var_units=[]
+
+timelen=0 #Initial value for the length of time axis
+
+var='tas'
+
+for model,sea in product(models, seas):
+
+    mod=mme.Mod(model)
+    Tl=mod.data[scen][var][mem][sea]['series']
+
+    tts0=mod.data[scen][var][mem][sea]['time'].array
+    lat=mod.lat
+    lon=mod.lon
+   
+
+    datain.append(Tl)
+    varnames.append(var+'-'+model+'-'+sea)
+    var_longnames.append('Global mean temperature in '+sea+' for '+model)
+    var_units.append('K')
+
+#    print(len(tts0)) 
+
+#
+#    # Add precipitation and convert it from kg m-2 s-1 to mm day-1
+#    datain.append(gmod['pr'].data['1pctCO2']['pr']['r1i1p1'][sea]['global']*86400)
+#    varnames.append('pr'+'-'+model+'-'+sea)
+#    var_longnames.append('Global mean precipitation in '+sea+' for '+model)
+#    var_units.append('mm day-1')
+#
+#      
+#
+    time_len_mod=len(tts0)
+    if time_len_mod>timelen:
+        timelen=time_len_mod
+
+timein=np.linspace(1,timelen,timelen)
+netcdfutils.write_2d_netcdf_file(datain,lat, lon, timein, ofile_reg, varnames, var_longnames=var_longnames,
+                      var_units=var_units,data_description='Annual series of temperature for the 1pctCO2 scenario from the CMIP5 dataset.')
 
 
