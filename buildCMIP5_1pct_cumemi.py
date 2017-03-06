@@ -179,10 +179,8 @@ for model in models:
         timelen=time_len_mod
 
 timein=np.linspace(1,timelen,timelen)
-netcdfutils.write_1d_netcdf_file(datain, timein, ofile, varnames, var_longnames=var_longnames,
+netcdfutils.write_netcdf_file(datain, varnames, ofile, timein=timein, var_longnames=var_longnames,
                       var_units=var_units,data_description='Cumulative carbon emissions for the 1pctCO2 scenario from the CMIP5 dataset.')
-
-
 
 ## Old convention
 ##outputfname = '/expl6/leduc/CMIP/Gillet-global-tas_pr_ANN.pkl'

@@ -13,9 +13,11 @@ from netCDF4 import Dataset
 import numpy as np
 import os
 import cPickle as pickle
+from itertools import product
 
 import Model as Ens
 import cdf2ens as c2e
+import netcdfutils
 #from Ensemble import Model
 reload(Ens)
 
@@ -53,15 +55,16 @@ NMOD=len(models)
 
 #models=['CanESM2']
 
-vv='pr'
-#vv='pr'
+var='pr'
+#var='pr'
 scen='1pctCO2'
+mem='r1i1p1'
 datadir='/dmf2/scenario/external_data/CMIP5/'
 #seas=['ANN','DJF','JJA','SON','MAM']
 seas=['ANN']
 NSEAS=len(seas)
 
-simdb=c2e.ncdbsearch(datadir,models=models,variables=[vv],scenarios=[scen])
+simdb=c2e.ncdbsearch(datadir,models=models,variables=[var],scenarios=[scen])
 #sys.exit()
 
 # # Create MME object
@@ -77,12 +80,55 @@ mme.Resolution()
 #output = open('/home/leduc/data/CMIP/gilletMME-1pctCO2-2_8x2_8.pkl', 'wb')
 
 # New convention
-outputfname = '/home/partanen/data/CMIP5-'+'regional'+'-'+vv+'-'+scen+'-N'+str(NMOD)+'-'+str(NSEAS)+'seas.pkl'
-output = open(outputfname, 'wb')
+#outputfname = '/home/partanen/data/CMIP5-'+'regional'+'-'+var+'-'+scen+'-N'+str(NMOD)+'-'+str(NSEAS)+'seas.pkl'
+#output = open(outputfname, 'wb')
+#
+#pickle.dump(mme, output,2)
+#output.close()
 
-pickle.dump(mme, output,2)
-output.close()
+ofile = '/home/partanen/data/CMIP5-'+'regional'+'-'+var+'-'+scen+'-N'+str(NMOD)+'-'+str(NSEAS)+'seas.nc'
 
+datain=[]
+varnames=[]
+var_longnames=[]
+var_units=[]
+
+timelen=0 #Initial value for the length of time axis
+
+
+for model,sea in product(models, seas):
+
+    mod=mme.Mod(model)
+    Tl=mod.data[scen][var][mem][sea]['series']
+
+    tts0=mod.data[scen][var][mem][sea]['time'].array
+    lat=mod.lat
+    lon=mod.lon
+   
+
+    datain.append(Tl)
+    varnames.append(var+'-'+model+'-'+sea)
+    var_longnames.append('Global mean temperature in '+sea+' for '+model)
+    var_units.append('K')
+
+#    print(len(tts0)) 
+
+#
+#    # Add precipitation and convert it from kg m-2 s-1 to mm day-1
+#    datain.append(gmod['pr'].data['1pctCO2']['pr']['r1i1p1'][sea]['global']*86400)
+#    varnames.append('pr'+'-'+model+'-'+sea)
+#    var_longnames.append('Global mean precipitation in '+sea+' for '+model)
+#    var_units.append('mm day-1')
+#
+#      
+#
+    time_len_mod=len(tts0)
+    if time_len_mod>timelen:
+        timelen=time_len_mod
+
+timein=np.linspace(1,timelen,timelen)
+netcdfutils.write_netcdf_file(datain,varnames, ofile, lat=lat, lon=lon, timein=timein, var_longnames=var_longnames,
+                      var_units=var_units,data_description='Annual series of temperature for the 1pctCO2 scenario from the CMIP5 dataset.')
 
 
 

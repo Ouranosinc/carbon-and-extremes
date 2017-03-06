@@ -251,7 +251,7 @@ for model,sea in product(models,seas):
         timelen=time_len_mod
 
 timein=np.linspace(1,timelen,timelen)
-netcdfutils.write_1d_netcdf_file(datain, timein, ofile, varnames, var_longnames=var_longnames,
+netcdfutils.write_netcdf_file(datain, varnames, ofile, timein=timein, varnames, var_longnames=var_longnames,
                       var_units=var_units,data_description='Global mean '+varlongnames[var]+' data for the 1pctCO2 scenario from the CMIP5 dataset.')
 
 

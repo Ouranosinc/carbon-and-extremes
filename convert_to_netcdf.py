@@ -102,10 +102,10 @@ for model,sea in product(models, seas):
         timelen=time_len_mod
 
 timein=np.linspace(1,timelen,timelen)
-netcdfutils.write_1d_netcdf_file(datain, timein, ofile_gm, varnames, var_longnames=var_longnames,
+netcdfutils.write_netcdf_file(datain,varnames, ofile_gm, timein=timein, var_longnames=var_longnames,
                       var_units=var_units,data_description='Global mean temperature and precipiation data with cumulative carbon emissions for the 1pctCO2 scenario from the CMIP5 dataset.')
 
-
+#write_netcdf_file(datain, varnames, filename, lat=None, lon=None, timein=None,
 ############ Regional data ####################################################
 datain=[]
 varnames=[]
@@ -147,7 +147,8 @@ for model,sea in product(models, seas):
         timelen=time_len_mod
 
 timein=np.linspace(1,timelen,timelen)
-netcdfutils.write_2d_netcdf_file(datain,lat, lon, timein, ofile_reg, varnames, var_longnames=var_longnames,
+netcdfutils.write_netcdf_file(datain,varnames, ofile_reg, lat=lat, lon=lon, timein=timein, var_longnames=var_longnames,
                       var_units=var_units,data_description='Annual series of temperature for the 1pctCO2 scenario from the CMIP5 dataset.')
 
 
+#write_netcdf_file(datain, varnames, filename, lat=None, lon=None, timein=None,

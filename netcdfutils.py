@@ -1,81 +1,15 @@
 """
 Module containing functions to deal with netCDF data
 """
-
+from __future__ import print_function
 import numpy as np
 import time
 from netCDF4 import Dataset
 import os
+import sys
 
 
-def write_1d_netcdf_file(datain, timein, filename, varnames,
-                      var_longnames=['NetCDF variable'],
-                      var_units=['not defined'],
-                      var_missing_value=np.NaN,
-                      var_fill_value=np.NaN,
-                      time_name='time',
-                      time_units='year',
-                      time_longname='time',
-                      time_standardname='time',
-                      time_calender='noleap',
-                      netcdf_format='NETCDF4',
-                      data_description='Data saved from Python'):
-    """
-    Write netCDF file in for the UVic ESCM. Variables datain, varnames, and
-    var_longname should be a list of numpy arrays.
-    """
-
-    # Remove old file
-    if os.path.isfile(filename):
-        os.remove(filename)
-
-    root_grp = Dataset(filename, 'w', format=netcdf_format)
-    
-
-    # Find the length of the time axis if any
-    if (np.ndim(np.squeeze(datain[0])) > 2):
-        timedim = np.shape(np.squeeze(datain[0]))[2]
-    else:
-        timedim = None
-
-    nvars = len(datain)
-
-    # dimensions
-    root_grp.createDimension('time', timedim)
-
-    # variables
-    vars = []  # Initialize empty dict to hold netcdf variables
-    times = root_grp.createVariable(time_name, 'f8', (time_name,))
-
-    for i in range(nvars):
-        vars.append(root_grp.createVariable(varnames[i], 'f4',
-                                            (time_name,)))
-
-    times[:] = timein
-
-    for i in range(nvars):
-        vars[i][:] = datain[i]
-
-    # Define attributes
-    times.units = time_units
-    times.long_name = time_longname
-    times.standard_name = time_standardname
-    times.calender = time_calender
-
-    for i in range(nvars):
-        vars[i].long_name = var_longnames[i]
-        vars[i].units = var_units[i]
-        vars[i].FillValue = var_fill_value
-        vars[i].missing_value = var_fill_value
-
-    root_grp.description = data_description
-    root_grp.history = 'Created ' + time.ctime(time.time())
-    root_grp.source = 'CMIP5 archieve'
-    root_grp.contact='antti-ilari.partanen@concordia.ca'
-    
-    root_grp.close()
-    
-def write_2d_netcdf_file(datain, lat, lon, timein, filename, varnames,
+def write_netcdf_file(datain, varnames, filename, lat=None, lon=None, timein=None,
                       var_longnames='NetCDF variable',
                       var_units='',
                       time_name='time',
@@ -96,10 +30,11 @@ def write_2d_netcdf_file(datain, lat, lon, timein, filename, varnames,
                       netcdf_format='NETCDF4',
                       data_description='Data saved from Python'):
     """
-    Write a 2D netCDF file
+    Write a 1D or 2D data into a netCDF file
 
-    Data should be formatted so that it is ntime x nlat x nlon. Lat index 0 
-    refers to XX and lon index 0 refers to XX
+    Data should be formatted so that it is either ntime for 1D data or 
+    ntime x nlat x nlon for 2D data. Other formats will not be saved correctly
+    or at all.
 
     """
     
@@ -115,25 +50,35 @@ def write_2d_netcdf_file(datain, lat, lon, timein, filename, varnames,
         timedim = None
     else:
         timedim = len(timein)
+        root_grp.createDimension(time_name, timedim)
+        times = root_grp.createVariable(time_name, 'f8', (time_name,))
 
     nvars = len(datain)
 
     root_grp.description = data_description
 
     # dimensions
-    root_grp.createDimension(time_name, timedim)
-    root_grp.createDimension(lat_name, len(lat))
-    root_grp.createDimension(lon_name, len(lon))
     
+    
+    if lat is not None:    
+        root_grp.createDimension(lat_name, len(lat))
+        latitudes = root_grp.createVariable(lat_name, 'f4', (lat_name,))
+    
+    if lon is not None:
+        root_grp.createDimension(lon_name, len(lon))
+        longitudes = root_grp.createVariable(lon_name, 'f4', (lon_name,))
 
     # variables
     vars = [] #Initialize empty list to hold netCDF variables
-    times = root_grp.createVariable(time_name, 'f8', (time_name,))
-    latitudes = root_grp.createVariable(lat_name, 'f4', (lat_name,))
-    longitudes = root_grp.createVariable(lon_name, 'f4', (lon_name,))
+    
+    
+    
     
     for i in range(nvars):
-        vars.append(root_grp.createVariable(varnames[i], 'f4',
+        if lat is None:
+            vars.append(root_grp.createVariable(varnames[i], 'f4',time_name))
+        else:
+            vars.append(root_grp.createVariable(varnames[i], 'f4',
                                        (time_name, lat_name, lon_name,)))
         
 
@@ -141,25 +86,41 @@ def write_2d_netcdf_file(datain, lat, lon, timein, filename, varnames,
     
 
     # Assign values to netCDF variables
-    latitudes[:] = lat
-    longitudes[:] = lon
-    times[:] = timein
+    if lat is not None: latitudes[:] = lat
+    if lon is not None: longitudes[:] = lon
+    if timein is not None: times[:] = timein
     
         
     
     for i in range(nvars):
-        time_in_len=datain[i].shape[0]
-        vars[i][:,:,:]=np.NaN
-        vars[i][0:time_in_len,:,:] = datain[i]  
+        if np.ndim(datain[i])==1:                        
+            time_in_len=len(datain[i])            
+            vars[i][:]=np.NaN
+            vars[i][0:time_in_len] = datain[i]
+        elif np.ndim(datain[i])==3:
+            time_in_len=datain[i].shape[0]
+            vars[i][:,:,:]=np.NaN
+            vars[i][0:time_in_len,:,:] = datain[i]
+        else:
+            print('Unsupported dimension for the variable. Exiting.')
+            sys.exit()
 
     # Define attributes
-    times.units = time_units
-    times.long_name = time_longname
-    times.standard_name = time_standardname
-    times.calender = time_calender
-    longitudes.long_name = lon_longname
-    longitudes.standard_name = lon_standardname
-    longitudes.units = lon_units
+    if timein is not None:
+        times.units = time_units
+        times.long_name = time_longname
+        times.standard_name = time_standardname
+        times.calender = time_calender
+
+    if lon is not None:    
+        longitudes.long_name = lon_longname
+        longitudes.standard_name = lon_standardname
+        longitudes.units = lon_units
+
+    if lat is not None:    
+        latitudes.long_name = lat_longname
+        latitudes.standard_name = lat_standardname
+        latitudes.units = lat_units
 
 
     for i in range(nvars):
@@ -169,13 +130,10 @@ def write_2d_netcdf_file(datain, lat, lon, timein, filename, varnames,
         else:
             vars[i].units = var_units
 
-    latitudes.units = lat_units
+    
 
     root_grp.history = 'Created ' + time.ctime(time.time())
     root_grp.source = 'CMIP5 archieve'
-
-    # lat.units = 'degrees north'
-    # lon.units = 'degrees east'
+    root_grp.contact='antti-ilari.partanen@concordia.ca'
 
     root_grp.close()
-
