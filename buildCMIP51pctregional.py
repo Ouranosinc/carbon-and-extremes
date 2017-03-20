@@ -30,8 +30,9 @@ reload(Ens)
 #destgrid=[3.75,3.75]
 destgrid='CanESM2'
 
-
-
+# Select in which format the output is saved
+output_netcdf=True
+output_pickle=True
 
 # Gillet ensemble:
 # models=['BCC-CSM1-1','BNU-ESM','CanESM2','CESM1-BGC','GFDL-ESM2G','GFDL-ESM2M','HadGEM2-ES','INMCM4','IPSL-CM5A-LR','IPSL-CM5A-MR','IPSL-CM5B-LR','MIROC-ESM','MPI-ESM-LR','MPI-ESM-MR','NorESM1-ME'] # 
@@ -86,7 +87,6 @@ mme.Resolution()
 #pickle.dump(mme, output,2)
 #output.close()
 
-ofile = '/home/partanen/data/CMIP5-'+'regional'+'-'+var+'-'+scen+'-N'+str(NMOD)+'-'+str(NSEAS)+'seas.nc'
 
 datain=[]
 varnames=[]
@@ -126,10 +126,12 @@ for model,sea in product(models, seas):
     if time_len_mod>timelen:
         timelen=time_len_mod
 
-timein=np.linspace(1,timelen,timelen)
-netcdfutils.write_netcdf_file(datain,varnames, ofile, lat=lat, lon=lon, timein=timein, var_longnames=var_longnames,
+if output_netcdf:
+    outputfile_netcdf = ('/home/partanen/data/CMIP5-'+'regional'+'-'+var+'-'+scen+'-N'+str(NMOD)+'-'+str(NSEAS)+'seas.nc')
+    timein=np.linspace(1,timelen,timelen)
+    netcdfutils.write_netcdf_file(datain,varnames, outputfile_netcdf, lat=lat, lon=lon, timein=timein, var_longnames=var_longnames,
                       var_units=var_units,data_description='Annual series of temperature for the 1pctCO2 scenario from the CMIP5 dataset.')
-
-
-
-
+if output_pickle:
+    outputfile_pickle='/home/partanen/data/CMIP5-'+'regional'+'-'+var+'-'+scen+'-N'+str(NMOD)+'-'+str(NSEAS)+'seas.pkl'
+    output = open(outputfile_pickle, 'wb')
+    pickle.dump(mme, output,2)
